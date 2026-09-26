@@ -17,6 +17,8 @@ void menu() {
     printf("  [2] Промотать время\n");
     printf("  [3] Посмотреть инвентарь\n");
     printf("  [4] Положить предмет в слот\n");
+    printf("  [5] Выбросить предмет\n");
+    printf("  [6] Очистка мусора\n");
 }
 
 void pause() {
@@ -32,6 +34,11 @@ int main() {
         menu();
         printf("Введите пункт: \n");
         scanf("%d", &pick);
+        if (pick > 6 || pick < 0) {
+            printf("Неверный пункт, введите заново\n");
+            pause();
+            continue;
+        }
         switch (pick) {
             case 0:
                 printf("   Выход   \n");
@@ -44,14 +51,20 @@ int main() {
                 printf("Сколько часов работать?\n");
                 int work;
                 scanf("%d", &work);
-                int time_past = current_hour;
-                current_hour += work;
-                while (current_hour >= 24) {
-                    current_day += 1;
-                    current_hour -= 24;
+                if (work > 0) {
+                    int time_past = current_hour;
+                    current_hour += work;
+                    while (current_hour >= 24) {
+                        current_day += 1;
+                        current_hour -= 24;
+                    }
+                    printf("Было %d:00. Игрок проработал %d часов. Стало: День %d, %d:00\n", time_past, work, current_day, current_hour);
+                    pause();
+                } else {
+                    printf("Неверный ввод часов");
+                    pause();
+                    continue;
                 }
-                printf("Было %d:00. Игрок проработал %d часов. Стало: День %d, %d:00\n", time_past, work, current_day, current_hour);
-                pause();
                 break;
             case 3:
                 for (int i = 0; i < 10; i++) {
@@ -67,10 +80,51 @@ int main() {
                 int id;
                 scanf("%d", &id);
                 if ((index <= 9 && index >= 0) && (id <= 9 && id >= 0)) {
+                    if (inventory_id[index] == id) {
+                        inventory[index]++;
+                    } else {
+                        inventory[index] = 1;
+                    }
                     inventory_id[index] = id;
-                    inventory[index] = 1;
+                } else {
+                    printf("Неверный индекс или айди\n");
+                    pause();
+                    continue;
                 }
                 pause();
+                break;
+            case 5:
+                printf("Введите индекс слота для выброса предмета:\n");
+                int indexdrop;
+                scanf("%d", &indexdrop);
+                if (indexdrop <= 9 && indexdrop >= 0) {
+                    inventory[indexdrop] = 0;
+                    inventory_id[indexdrop] = 0;
+                } else {
+                    printf("Неверный индекс слота\n");
+                }
+                pause();
+                break;
+            case 6:
+                printf("Введите id предмета для очистки:\n");
+                int id_trash;
+                int score = 0;
+                scanf("%d", &id_trash);
+                if (id_trash > 0 && id_trash <= 9) {
+                    for (int i = 0; i < 10; i++) {
+                        if (inventory_id[i] == id_trash) {
+                            inventory[i] = 0;
+                            printf("Удалён слот %d\n", i);
+                            score += 1;
+                            inventory_id[i] = 0;
+                        }
+                    }
+                    printf("Всего удалено %d слотов\n", score);
+                } else {
+                    printf("Неверный id предмета\n");
+                    pause();
+                    continue;
+                }
                 break;
         }
     }
