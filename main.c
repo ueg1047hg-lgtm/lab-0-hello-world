@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 int current_day = 1; // дни
 int current_hour = 8; //часы
 int inventory[10] = {0,0,0,0,0,0,0,0,0,0}; //инвентарь, кол-во чего то
@@ -14,6 +15,8 @@ int inventory_id[10] = {0,1,2,3,4,5,6,7,8,9}; // id предметов
     //7 = компас
     //8 = карта
     //9 = рюкзак
+char farmer_name[32]; // имя фермера
+char item_names[10][32]; // массив для сохранения имён до 31 символа
 const char *inventory_name[10] = { 
     "Пусто",
     "Дерево",
@@ -27,10 +30,44 @@ const char *inventory_name[10] = {
     "Рюкзак"
 }; //список для id
 
+void load__item_names() {
+    FILE *file = fopen("items.txt", "r"); //Открывать файл в формате r - read
+    if (file == NULL) {
+        printf("Пустой/не найден items.txt, Стандартные значение приняты");
+        strcpy(item_names[0], "Пусто");
+        strcpy(item_names[1], "Дерево");
+        strcpy(item_names[2], "Камень");
+        strcpy(item_names[3], "Семена");
+        strcpy(item_names[4], "Мотыга");
+        strcpy(item_names[5], "Огниво");
+        strcpy(item_names[6], "Часы");
+        strcpy(item_names[7], "Компас");
+        strcpy(item_names[8], "Карта");
+        strcpy(item_names[9], "Рюкзак");
+        return;
+    }
+    char line[256]; //строка одна из 256 символов
+    int id = 0; //счётчик
+    while (fgets(line, sizeof(line), file) != NULL && id < 10) { //пока строка есть и айди<10
+        line[strcspn(line, "\n")] = '\0'; //убираем пробел
+        int file_id;
+        char name[32]; //для имени предмета
+        if (sscanf(line, "%d %31[^\n]", &file_id, name) == 2) { //читаем две. число, пропускаем пробел, читаем строку 31символа до \n, если их 2, то
+            if (file_id >= 0 && file_id < 10) { //если айди норм, то
+                strcpy(item_names[file_id], name); //копируем имя в нужный айди
+            }
+        } else {
+            strcpy(item_names[id], line); //иначе кладём
+        }
+        id++;
+    }
+    fclose(file);
+}
+
 
 
 void menu() { //def функция меню
-    printf("     Текстовое меню:     \n");
+    printf("     Текстовое меню:     |Имя: %s \n", farmer_name);
     printf("  [0] Выход\n");
     printf("  [1] Посмотреть на часы\n");
     printf("  [2] Промотать время\n");
@@ -48,6 +85,14 @@ void pause() { // пауза между выбором и меню
 int main() { //запуск
     SetConsoleCP(65001); //русский язык
     SetConsoleOutputCP(65001); //русский язык
+    load__item_names();
+    printf("Введите имя фермера: ");
+    fgets(farmer_name, sizeof(farmer_name), stdin); //читаем имя/скок символов/ввод
+    farmer_name[strcspn(farmer_name, "\n")] = '\0'; //убираем \n в char
+    if (strlen(farmer_name) == 0) { //если длина 0
+        strcpy(farmer_name, "Неизвестный"); // то копируем имя на Неизвестный
+    }
+
     int pick = -1; //ввели выбор
     while (pick != 0) {
         menu(); //вызывается меню
@@ -105,7 +150,7 @@ int main() { //запуск
                 for (int i = 0; i<10; i++) { //перебор
                     int value = inventory[i];
                     int slot = i;
-                    const char *name = inventory_name[inventory_id[i]];
+                    const char *name = item_names[inventory_id[i]];
                     printf("Слот %d: [%d] - %s, id = %d\n",slot,value,name, inventory_id[i]);
                 }
                 pause();

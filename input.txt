@@ -1,0 +1,6 @@
+# Настройки игры
+difficulty=hard
+rain_chance=40
+
+music=on
+sound=off
