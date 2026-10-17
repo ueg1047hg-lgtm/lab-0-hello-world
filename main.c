@@ -202,6 +202,61 @@ void clear_trash() {                                                            
     } //защита от дурака
 }
 
+
+
+void search_n_name() {                                                                                    //7 пункт меню
+    char search_name[32]; //что будем искать/название
+    printf("Введите название предмета: ");
+    fgets(search_name, sizeof(search_name), stdin); //читаем строку в предмет
+    search_name[strcspn(search_name, "\n")] = '\0'; //убираем лишний пробел
+    int search_id = 999999999; //счётчик
+    for (int i = 0; i<10; i++) { //от 0 до 9
+        if (strcmp(item_names[i], search_name) == 0) { //если 2 строки одинаковые из нашего списка айди и нашего предмета который ищем
+            search_id = i; //вводим айди в счётчик
+            break;
+        }
+    }
+    if (search_id == 999999999) { //если айди не нашли
+        printf("Предмета с идентичным названием отсутствует в каталоге\n");
+        return;
+    }
+
+    int found = 0;
+    for (int i = 0; i<10; i++){ // от 0 до 9
+        if(inventory_id[i] == search_id && inventory[i] > 0) { //если айди предмета == счётчику И кол-во больше 0
+            printf("Слот %d: %s (id=%d, количество = %d)\n", i,item_names[search_id],search_id,inventory[i]); //слот, имя, какой по счёту, кол-во
+            found = 1;
+        }
+    }
+    if (!found) { //если ничего не нашли
+        printf("Предмет %s отсутствует в инвентаре\n", search_name);
+    }
+}
+
+
+void write_diary() {                                                                                        //8 пункт меню
+    FILE *file = fopen("diary.txt", "a"); //открыли diary.txt в формате дозаписи(Append)
+    if (file == NULL) { //если пустой файл/нет его
+        printf("Не смог открыть дневник\n");
+        return;
+    }
+    fprintf(file, "%s\n", farmer_name); //вводим имя фермера в txt
+    fprintf(file, "День %d, %d:00\n", current_day, current_hour); //день, время
+    fprintf(file, "Инвентарь:\n"); //инвентарь:
+
+    for (int i = 0; i<10; i++) { //от 0 до 9
+        int id = inventory_id[i]; //айди
+        int count = inventory[i]; //количество
+        const char *name = item_names[id]; //имя предмета
+        fprintf(file, " Слот %d: %s (id=%d), x%d\n", i, name, id, count); //слот, имя, его айди и кол-во
+    }
+    fprintf(file, "\n"); //переход на новую строку
+    fclose(file); //закрыли файл
+    printf("Запись сделана в дневник");
+}
+
+
+
 void bulletin_board() {                                                                                     //9 пункт меню
     FILE *in = fopen("input.txt", "r"); //открыли input.txt в формате чтения(read)
     if (in == NULL) { //если пусто/не существует
