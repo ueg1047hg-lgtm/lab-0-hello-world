@@ -2,7 +2,7 @@
 #include <string.h> //strcpy, strlen....
 int current_day = 1; // текущий день
 int current_hour = 8; // текущее время
-int inventory[10] = {0,0,0,0,0,0,0,0,0,0}; //количество чего-то в инвентаре
+int inventory[10] = {0,2,16,6,1,1,1,1,1,1}; //количество чего-то в инвентаре
 int inventory_id[10] = {0,1,2,3,4,5,6,7,8,9}; // id предметов в инвентаре
 char farmer_name[32]; // имя фермера до 31 символа
 char item_names[10][32]; // массив для сохранения названий предметов до 31 символа
@@ -26,8 +26,8 @@ void load__item_names() {                                                       
     }
     char line[256]; //строка одна из 256 символов
     int id = 0; //счётчик
-    while (fgets(line, sizeof(line), file) != NULL && id < 10) { //пока строка есть(не ничего) и айди<10
-        line[strcspn(line, "\n")] = '\0'; //убираем пробел
+    while (fgets(line, sizeof(line), file) != NULL && id < 10) { //пока строка есть(не ничего) И айди<10
+        line[strcspn(line, "\n")] = '\0'; //убираем \n
         int file_id; //файл id
         char name[32]; //для имени предмета  до 31символа
         if (sscanf(line, "%d %31[^\n]", &file_id, name) == 2) { //читаем два значения(число - пробел - название предмета), если их 2, то
@@ -61,6 +61,16 @@ void menu() {                                                                   
 void pause() {                                                                                        // пауза между выбором и меню
     getchar();
     getchar();
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    printf("\n");
 }
 
 
@@ -208,7 +218,7 @@ void search_n_name() {                                                          
     char search_name[32]; //что будем искать/название
     printf("Введите название предмета: ");
     fgets(search_name, sizeof(search_name), stdin); //читаем строку в предмет
-    search_name[strcspn(search_name, "\n")] = '\0'; //убираем лишний пробел
+    search_name[strcspn(search_name, "\n")] = '\0'; //убираем \n
     int search_id = 999999999; //счётчик
     for (int i = 0; i<10; i++) { //от 0 до 9
         if (strcmp(item_names[i], search_name) == 0) { //если 2 строки одинаковые из нашего списка айди и нашего предмета который ищем
@@ -253,6 +263,16 @@ void write_diary() {                                                            
     fprintf(file, "\n"); //переход на новую строку
     fclose(file); //закрыли файл
     printf("Запись сделана в дневник");
+    pause();
+    printf("%s\n", farmer_name); //выводим имя фермера
+    printf("День %d, %d:00\n", current_day, current_hour); //день, время
+    printf("Инвентарь:\n"); //инвентарь:
+    for (int i = 0; i<10; i++) { //от 0 до 9
+        int id = inventory_id[i]; //айди
+        int count = inventory[i]; //количество
+        const char *name = item_names[id]; //имя предмета
+        printf(" Слот %d: %s (id=%d), x%d\n", i, name, id, count); //слот, имя, его айди и кол-во
+    }
 }
 
 
@@ -269,13 +289,13 @@ void bulletin_board() {                                                         
         fclose(in);
         return;
     }
-    char line[256]; //читаем линию до 256символов
+    char line[256]; //читаем строку до 256символов
     printf("Активные квесты (день %d): \n", current_day); //сегодняшний день напечатали
     fprintf(out, "Активные квесты (день %d): \n", current_day); //сегодняшние квесты записали в output.txt
-    while (fgets(line, sizeof(line), in)) { //если есть что-то в input.txt
-        line[strcspn(line, "\n")] = '\0'; //убираем пробелы
+    while (fgets(line, sizeof(line), in)) { //если есть что-то в input.txt пишем в линию
+        line[strcspn(line, "\n")] = '\0'; //убираем \n
         if (line[0] == '\0') {
-            continue; //если строка пустая, то дальше
+            continue; //если строка пустая, то пропуск
         }
         char *day_str = strtok(line, "|");
         char *author  = strtok(NULL, "|");
@@ -315,6 +335,7 @@ void bulletin_board() {                                                         
     }
     fclose(in);
     fclose(out);
+    printf("\n");
     printf("Результат записан в output.txt\n");
 }
 
@@ -324,7 +345,7 @@ int main() {                                                                    
     load__item_names(); //загрузка название предметов
     printf("Введите имя фермера: ");
     fgets(farmer_name, sizeof(farmer_name), stdin); //читаем имя/скок символов/ввод
-    farmer_name[strcspn(farmer_name, "\n")] = '\0'; //убираем пробел
+    farmer_name[strcspn(farmer_name, "\n")] = '\0'; //убираем \n
     if (strlen(farmer_name) == 0) { //если длина 0
         strcpy(farmer_name, "Неизвестный"); // то меняем имя на Неизвестный
     }
@@ -381,11 +402,11 @@ int main() {                                                                    
             case 7: //поиск предмета по имени
                 getchar();
                 search_n_name();
-                pause();
+                getchar();
                 break;
             case 8: //запись в дневник
                 write_diary();
-                pause();
+                getchar();
                 break;
             case 9: //доска объявлений
                 bulletin_board();
