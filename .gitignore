@@ -1,0 +1,15 @@
+*.exe
+*.o
+*.out
+*.obj
+*.pdb
+.vs/
+.vscode/
+.idea/
+*.log
+*.tmp
+*output.txt
+*diary.txt
+*ini
+*reserve 17.10.2026/
+*.ilk
