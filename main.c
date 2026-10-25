@@ -1,11 +1,59 @@
 #include <stdio.h> //printf, scanf....
 #include <string.h> //strcpy, strlen....
+#include <stdlib.h> // malloc, free, rand, srand - блоки памяти, рандомы
+#include <windows.h> //на всяк для ру языка
+
 int current_day = 1; // текущий день
 int current_hour = 8; // текущее время
 int inventory[10] = {0,2,16,6,1,1,1,1,1,1}; //количество чего-то в инвентаре
 int inventory_id[10] = {0,1,2,3,4,5,6,7,8,9}; // id предметов в инвентаре
 char farmer_name[32]; // имя фермера до 31 символа
 char item_names[10][32]; // массив для сохранения названий предметов до 31 символа
+int depth = 0;    //глубоко ли?
+int journey_cards = 0;    //карты
+
+typedef struct {    //коробка данных про мапу
+    char **net;   // сетка мапы
+    int x_height_map;       // Высота сетки x
+    int y_width_map;       // ширина сетки y
+    int hero_xpos;   // позиция чела высота x
+    int hero_ypos;   // позиция чела ширина y
+    int in_cave;    // пещера или нет
+} GameMap;
+
+
+char **dedicated_map(int x_height_map, int y_width_map) {          //выделенная память карты с рандомным мусором вместо данных
+    char **map = (char **)malloc(x_height_map * sizeof(char *));        //память под мапу начало
+    if (map == NULL) { 
+        printf("ОШИБКА : НЕХВАТКА ПАМЯТИ!!!\n"); //если памяти нема
+        return NULL;
+    }
+
+    for (int i = 0; i < x_height_map; i++) {          //по каждой строке цикл
+        map[i] = (char *)malloc(y_width_map * sizeof(char));   //выделили память под строки
+        if (map[i] == NULL) {
+            printf("ОШИБКА : НЕХВАТКА ПАМЯТИ ПОД СТРОКУ!!!\n");     //нема памяти
+            for (int j = 0; j < i; j++) {     //раз нема памяти то цикл по строкам
+                free(map[j]);    //свобода памяти!!!
+            }
+            free(map); //свобода мапе
+            return NULL; //выход
+        }
+    }
+    return map; //если всё норм то возврат карты
+}
+
+
+
+void free_map(char **map, int x_height_map) {  //очищение памяти
+    if (map == NULL) return;     //если и так пустая то скип
+
+    for (int i = 0; i < x_height_map; i++) {       //цикл по всем строкам
+        free(map[i]);         //удаляем строки
+    }
+    free(map);        //удаляем карту
+}
+
 
 
 void load__item_names() {                                                                              //функция для предметов
