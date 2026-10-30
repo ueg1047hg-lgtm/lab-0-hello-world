@@ -55,6 +55,138 @@ void free_map(char **map, int x_height_map) {  //очищение памяти
 }
 
 
+void random_place(GameMap *g, char sym) {      //символ в рандом месте
+    while (1) { //крутимся пока не найдем место
+        int x = rand() % ((*g).x_height_map - 2) + 1; //рандом строка БЕЗ стен
+        int y = rand() % ((*g).y_width_map - 2) + 1; //рандом столбец БЕЗ стен
+        if ((*g).net[x][y] == '.') {         //если тут трава
+            (*g).net[x][y] = sym;      //ставим символ
+            break;
+        }
+    }
+}
+
+
+
+void generate_forest(GameMap *g) {          //генерируем лес
+    (*g).x_height_map = rand() % 26 + 5;       //высота от 5 до 30
+    (*g).y_width_map = rand() % 26 + 5;         //ширина от 5 до 30
+    (*g).net = dedicated_map((*g).x_height_map, (*g).y_width_map);     //вызываем функцию для выделения памяти
+
+    for (int i = 0; i < (*g).x_height_map; i++) {     //цикл по строкам
+        for (int j = 0; j < (*g).y_width_map; j++) {    //цикл по столбцам
+            if (i == 0 || i == (*g).x_height_map - 1 || j == 0 || j == (*g).y_width_map - 1) {    //если x=0 или x-1 или y=0 или y-1
+                (*g).net[i][j] = '#';      //забор поставили
+            } else {        //если в лесу не на краю карты
+                int r = rand() % 100;       //от 0 до 99
+                if (r < 21) (*g).net[i][j] = 'T';         //в случае меньше 21, то дерево
+                else if (r < 31) (*g).net[i][j] = 'R';          //если меньше 31, то камень
+                else (*g).net[i][j] = '.';         //иначе трава спавнится
+            }
+        }
+    }
+
+    random_place(g, '^'); //место для костра/лагеря
+    random_place(g, 'O');  //место для пещерки
+
+    do { 
+        (*g).hero_xpos = rand() % ((*g).x_height_map - 2) + 1;        //рандом x позиция игрока изначальная
+        (*g).hero_ypos = rand() % ((*g).y_width_map - 2) + 1;         //рандом y позиция игрока изначальная
+    } while ((*g).net[(*g).hero_xpos][(*g).hero_ypos] != '.');       //проверяем, не в дереве или камне
+
+    (*g).in_cave = 0;       //мы в лесу
+    journey_cards++;        //+1 карта
+}
+
+
+void draw_map(GameMap *g) {       //вывод карты
+    printf("\n");
+    
+    for (int i = 0; i < (*g).x_height_map; i++) {       //цикл по x
+        for (int j = 0; j < (*g).y_width_map; j++) {      //цикл по y
+            if (i == (*g).hero_xpos && j == (*g).hero_ypos) {         //если это клетка героя
+                printf("@ ");                  //рисуем героя 
+            } else { 
+                printf("%c ", (*g).net[i][j]); //иначе рисуем остальное дерево, камни, костёр/лагер
+            }
+        }
+        printf("\n");
+    }
+    
+    printf("Карт пройдено: %d\n", journey_cards); //карт пройдено
+    printf("Глубина: %d\n", depth);         //глубина
+}
+
+
+int move_hero(GameMap *g, int dx, int dy) {    //distance по x, distance по y
+    int new_x = (*g).hero_xpos + dx;       //топаем по x
+    int new_y = (*g).hero_ypos + dy;       //топаем по y
+
+    if (new_x < 0 || new_x >= (*g).x_height_map || new_y < 0 || new_y >= (*g).y_width_map) {    //проверка выхода за карту
+        return 0; //незя за карту
+    }
+
+    char target = (*g).net[new_x][new_y];      //что на новой клетке?
+
+    if (target == '#' || target == 'T' || target == 'R') {       //забор!? дерево!? камень!?
+        return 0; //незя
+    }
+
+    (*g).hero_xpos = new_x;     //смена координат x героя
+    (*g).hero_ypos = new_y;     //смена координат y героя
+
+    if (target == 'O') {         //вход в пещеру если есть
+        return 2;          //возвращаем 2 если в пещеру вошли
+    }
+
+    return 1; //обычный шаг по карте
+}
+
+
+void adventure() {
+    GameMap world;              //коробка мира
+    generate_forest(&world);        //создал лес
+
+    int running = 1;            //топаем
+    char walk;                   //буква от игрока какая
+
+    while (running == 1) {
+        draw_map(&world);               //отображаем карту
+        printf("Действие (W/A/S/D, Q - выход): ");
+        
+        if (scanf(" %c", &walk) != 1) {                 //читаем букву(скипаем все пробелы в scanf)
+            while (getchar() != '\n');                  //если не то ввели
+            continue; //скип
+        }
+
+        int dx = 0, dy = 0;              //ноль
+        if (walk == 'w' || walk == 'W') dx = -1;                 //вверх
+        else if (walk == 's' || walk == 'S') dx = 1;                  //вниз
+        else if (walk == 'a' || walk == 'A') dy = -1;                     //влево
+        else if (walk == 'd' || walk == 'D') dy = 1;                      //вправо
+        else if (walk == 'q' || walk == 'Q') {                            //домой, Уолтер
+            printf("Выход из приключения.\n");
+            break;
+        }
+        else {
+            printf("Не знаю такой команды.\n");
+            continue;
+        }
+
+        int result = move_hero(&world, dx, dy); //движение
+        if (result == 0) {
+            printf("Нет возможности идти: препятствие.\n");
+        } else if (result == 2) {
+            printf("Вход в пещеру\n");
+        }
+    }
+
+    free_map(world.net, world.x_height_map);                                            //свобода памяти от карты
+    printf("Память карты очищена. Возврат в меню.\n");
+}
+
+
+
 
 void load__item_names() {                                                                              //функция для предметов
     FILE *file = fopen("items.txt", "r"); //Открывать файл в формате r - read
@@ -103,6 +235,7 @@ void menu() {                                                                   
     printf("  [7] Поиск предета в рюкзаке по названию\n");
     printf("  [8] Записать состояние в дневник\n");
     printf("  [9] Доска объявлений\n");
+    printf("  [10] Отправиться в приключение\n");
 }
 
 
@@ -408,7 +541,7 @@ int main() {                                                                    
             pause();
             continue;
         } //защита от дурака
-        if (pick >9 || pick <0) {
+        if (pick >10 || pick <0) {
             printf("Неверный пункт, введите заново\n");
             pause();
             continue;
@@ -459,6 +592,9 @@ int main() {                                                                    
             case 9: //доска объявлений
                 bulletin_board();
                 pause();
+                break;
+            case 10: //отправиться в приключение 
+                adventure();
                 break;
         }
     }
