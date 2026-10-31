@@ -2,6 +2,7 @@
 #include <string.h> //strcpy, strlen....
 #include <stdlib.h> // malloc, free, rand, srand - блоки памяти, рандомы
 #include <windows.h> //на всяк для ру языка
+#include <time.h>
 
 int current_day = 1; // текущий день
 int current_hour = 8; // текущее время
@@ -12,8 +13,9 @@ char item_names[10][32]; // массив для сохранения назва�
 int depth = 0;    //глубоко ли?
 int journey_cards = 0;    //карты
 
-typedef struct {    //коробка данных про мапу
-    char **net;   // сетка мапы
+
+typedef struct {    //коробка данных про карту
+    char **net;   // сетка карты(указатель на указатель)
     int x_height_map;       // Высота сетки x
     int y_width_map;       // ширина сетки y
     int hero_xpos;   // позиция чела высота x
@@ -22,170 +24,11 @@ typedef struct {    //коробка данных про мапу
 } GameMap;
 
 
-char **dedicated_map(int x_height_map, int y_width_map) {          //выделенная память карты с рандомным мусором вместо данных
-    char **map = (char **)malloc(x_height_map * sizeof(char *));        //память под мапу начало
-    if (map == NULL) { 
-        printf("ОШИБКА : НЕХВАТКА ПАМЯТИ!!!\n"); //если памяти нема
-        return NULL;
-    }
-
-    for (int i = 0; i < x_height_map; i++) {          //по каждой строке цикл
-        map[i] = (char *)malloc(y_width_map * sizeof(char));   //выделили память под строки
-        if (map[i] == NULL) {
-            printf("ОШИБКА : НЕХВАТКА ПАМЯТИ ПОД СТРОКУ!!!\n");     //нема памяти
-            for (int j = 0; j < i; j++) {     //раз нема памяти то цикл по строкам
-                free(map[j]);    //свобода памяти!!!
-            }
-            free(map); //свобода мапе
-            return NULL; //выход
-        }
-    }
-    return map; //если всё норм то возврат карты
+void my_pause() {                                                                                        // пауза между выбором и меню
+    getchar();
+    getchar();
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 }
-
-
-
-void free_map(char **map, int x_height_map) {  //очищение памяти
-    if (map == NULL) return;     //если и так пустая то скип
-
-    for (int i = 0; i < x_height_map; i++) {       //цикл по всем строкам
-        free(map[i]);         //удаляем строки
-    }
-    free(map);        //удаляем карту
-}
-
-
-void random_place(GameMap *g, char sym) {      //символ в рандом месте
-    while (1) { //крутимся пока не найдем место
-        int x = rand() % ((*g).x_height_map - 2) + 1; //рандом строка БЕЗ стен
-        int y = rand() % ((*g).y_width_map - 2) + 1; //рандом столбец БЕЗ стен
-        if ((*g).net[x][y] == '.') {         //если тут трава
-            (*g).net[x][y] = sym;      //ставим символ
-            break;
-        }
-    }
-}
-
-
-
-void generate_forest(GameMap *g) {          //генерируем лес
-    (*g).x_height_map = rand() % 26 + 5;       //высота от 5 до 30
-    (*g).y_width_map = rand() % 26 + 5;         //ширина от 5 до 30
-    (*g).net = dedicated_map((*g).x_height_map, (*g).y_width_map);     //вызываем функцию для выделения памяти
-
-    for (int i = 0; i < (*g).x_height_map; i++) {     //цикл по строкам
-        for (int j = 0; j < (*g).y_width_map; j++) {    //цикл по столбцам
-            if (i == 0 || i == (*g).x_height_map - 1 || j == 0 || j == (*g).y_width_map - 1) {    //если x=0 или x-1 или y=0 или y-1
-                (*g).net[i][j] = '#';      //забор поставили
-            } else {        //если в лесу не на краю карты
-                int r = rand() % 100;       //от 0 до 99
-                if (r < 21) (*g).net[i][j] = 'T';         //в случае меньше 21, то дерево
-                else if (r < 31) (*g).net[i][j] = 'R';          //если меньше 31, то камень
-                else (*g).net[i][j] = '.';         //иначе трава спавнится
-            }
-        }
-    }
-
-    random_place(g, '^'); //место для костра/лагеря
-    random_place(g, 'O');  //место для пещерки
-
-    do { 
-        (*g).hero_xpos = rand() % ((*g).x_height_map - 2) + 1;        //рандом x позиция игрока изначальная
-        (*g).hero_ypos = rand() % ((*g).y_width_map - 2) + 1;         //рандом y позиция игрока изначальная
-    } while ((*g).net[(*g).hero_xpos][(*g).hero_ypos] != '.');       //проверяем, не в дереве или камне
-
-    (*g).in_cave = 0;       //мы в лесу
-    journey_cards++;        //+1 карта
-}
-
-
-void draw_map(GameMap *g) {       //вывод карты
-    printf("\n");
-    
-    for (int i = 0; i < (*g).x_height_map; i++) {       //цикл по x
-        for (int j = 0; j < (*g).y_width_map; j++) {      //цикл по y
-            if (i == (*g).hero_xpos && j == (*g).hero_ypos) {         //если это клетка героя
-                printf("@ ");                  //рисуем героя 
-            } else { 
-                printf("%c ", (*g).net[i][j]); //иначе рисуем остальное дерево, камни, костёр/лагер
-            }
-        }
-        printf("\n");
-    }
-    
-    printf("Карт пройдено: %d\n", journey_cards); //карт пройдено
-    printf("Глубина: %d\n", depth);         //глубина
-}
-
-
-int move_hero(GameMap *g, int dx, int dy) {    //distance по x, distance по y
-    int new_x = (*g).hero_xpos + dx;       //топаем по x
-    int new_y = (*g).hero_ypos + dy;       //топаем по y
-
-    if (new_x < 0 || new_x >= (*g).x_height_map || new_y < 0 || new_y >= (*g).y_width_map) {    //проверка выхода за карту
-        return 0; //незя за карту
-    }
-
-    char target = (*g).net[new_x][new_y];      //что на новой клетке?
-
-    if (target == '#' || target == 'T' || target == 'R') {       //забор!? дерево!? камень!?
-        return 0; //незя
-    }
-
-    (*g).hero_xpos = new_x;     //смена координат x героя
-    (*g).hero_ypos = new_y;     //смена координат y героя
-
-    if (target == 'O') {         //вход в пещеру если есть
-        return 2;          //возвращаем 2 если в пещеру вошли
-    }
-
-    return 1; //обычный шаг по карте
-}
-
-
-void adventure() {
-    GameMap world;              //коробка мира
-    generate_forest(&world);        //создал лес
-
-    int running = 1;            //топаем
-    char walk;                   //буква от игрока какая
-
-    while (running == 1) {
-        draw_map(&world);               //отображаем карту
-        printf("Действие (W/A/S/D, Q - выход): ");
-        
-        if (scanf(" %c", &walk) != 1) {                 //читаем букву(скипаем все пробелы в scanf)
-            while (getchar() != '\n');                  //если не то ввели
-            continue; //скип
-        }
-
-        int dx = 0, dy = 0;              //ноль
-        if (walk == 'w' || walk == 'W') dx = -1;                 //вверх
-        else if (walk == 's' || walk == 'S') dx = 1;                  //вниз
-        else if (walk == 'a' || walk == 'A') dy = -1;                     //влево
-        else if (walk == 'd' || walk == 'D') dy = 1;                      //вправо
-        else if (walk == 'q' || walk == 'Q') {                            //домой, Уолтер
-            printf("Выход из приключения.\n");
-            break;
-        }
-        else {
-            printf("Не знаю такой команды.\n");
-            continue;
-        }
-
-        int result = move_hero(&world, dx, dy); //движение
-        if (result == 0) {
-            printf("Нет возможности идти: препятствие.\n");
-        } else if (result == 2) {
-            printf("Вход в пещеру\n");
-        }
-    }
-
-    free_map(world.net, world.x_height_map);                                            //свобода памяти от карты
-    printf("Память карты очищена. Возврат в меню.\n");
-}
-
-
 
 
 void load__item_names() {                                                                              //функция для предметов
@@ -239,22 +82,6 @@ void menu() {                                                                   
 }
 
 
-void pause() {                                                                                        // пауза между выбором и меню
-    getchar();
-    getchar();
-    printf("\n");
-    printf("\n");
-    printf("\n");
-    printf("\n");
-    printf("\n");
-    printf("\n");
-    printf("\n");
-    printf("\n");
-    printf("\n");
-    printf("\n");
-}
-
-
 void show_time() {                                                                                    //1 пункт меню {
     printf("Текущее время: День %d, %d:00\n", current_day, current_hour); //вывод времени
 }
@@ -268,7 +95,7 @@ void work_time() {                                                              
     if (scanf("%d", &work) != 1) {
         scanf("%*s");
         printf("Неверное значение\n");
-        pause();
+        my_pause();
         return;
     }//защита от дурака
 
@@ -280,12 +107,12 @@ void work_time() {                                                              
             current_hour -= 24;
         }
         printf("Было %d:00. Игрок проработал %d часов. Стало: День %d, %d:00\n", time_past,work,current_day,current_hour);
-        pause();
+        my_pause();
     }
 
     else {
         printf("Неверный ввод часов");
-        pause();
+        my_pause();
         return;
     } //2 защита от дурака при минусовых значениях
 }
@@ -308,7 +135,7 @@ void put_item() {                                                               
     if (scanf("%d", &index) != 1) {
         scanf("%*s");
         printf("Неверное значение\n");
-        pause();
+        my_pause();
         return;
     } //защита от дурака
 
@@ -318,7 +145,7 @@ void put_item() {                                                               
     if (scanf("%d", &id) != 1) {
         scanf("%*s");
         printf("Неверное значение\n");
-        pause();
+        my_pause();
         return;
     } //2 защита от дурака
 
@@ -334,7 +161,7 @@ void put_item() {                                                               
 
     else {
         printf("Неверный индекс или айди\n");
-        pause();
+        my_pause();
         return;
     } //2 защита от дурака
 }
@@ -347,7 +174,7 @@ void drop_item() {                                                              
     if (scanf("%d", &indexdrop) != 1) {
         scanf("%*s");
         printf("Неверное значение\n");
-        pause();
+        my_pause();
         return;
     } //защита от дурака
 
@@ -369,7 +196,7 @@ void clear_trash() {                                                            
     if (scanf("%d", &id_trash) != 1) {
         scanf("%*s");
         printf("Неверное значение\n");
-        pause();
+        my_pause();
         return;
     }//защита от дурака
 
@@ -388,7 +215,7 @@ void clear_trash() {                                                            
 
     else {
         printf("Неверный id предмета\n");
-        pause();
+        my_pause();
         return;
     } //защита от дурака
 }
@@ -444,7 +271,7 @@ void write_diary() {                                                            
     fprintf(file, "\n"); //переход на новую строку
     fclose(file); //закрыли файл
     printf("Запись сделана в дневник");
-    pause();
+    my_pause();
     printf("%s\n", farmer_name); //выводим имя фермера
     printf("День %d, %d:00\n", current_day, current_hour); //день, время
     printf("Инвентарь:\n"); //инвентарь:
@@ -520,7 +347,255 @@ void bulletin_board() {                                                         
     printf("Результат записан в output.txt\n");
 }
 
-int main() {                                                                                                      //запуск
+
+char **dedicated_map(int x_height_map, int y_width_map) {          //создаём функцию с x и y размерами карты, функция вернёт указатель на указатель(главный адрес)
+    char **map = (char **)malloc(x_height_map * sizeof(char *));        //**map - внутри адрес, который ведёт на адреса
+                                                                        //char ** по адресу будет список
+                                                                        // Memory ALLOCation занимает(бронирует) определённое количество байтов и возвращает
+                                                                        //умножение x строк на sizeof(сколько байт занимает указатель(8 байт))
+    if (map == NULL) { 
+        printf("ОШИБКА : НЕХВАТКА ПАМЯТИ!!!\n"); //если памяти нет, то возвращаем NULL
+        return NULL;
+    }
+
+    for (int i = 0; i < x_height_map; i++) {            //цикл по строкам
+        map[i] = (char *)malloc(y_width_map * sizeof(char));        //в map[i] - адрес строки записывается
+                                                                        //char * по адресу будет строка
+                                                                        // Memory ALLOCation занимает(бронирует) определённое количество байтов и возвращает
+                                                                        //умножение y столбцов на sizeof(скок весит символ(1 байт))
+        if (map[i] == NULL) {
+            printf("ОШИБКА : НЕХВАТКА ПАМЯТИ ПОД СТРОКУ!!!\n");     //если памяти нет, то возвращаем NULL в конце
+            for (int j = 0; j < i; j++) {     //памяти не хватило на i строке, освобождаем строки которые успели создать
+                free(map[j]);    //свобода памяти!!! (в строках которые успели забронировать)
+            }
+            free(map);   //свобода карте(память освободилась)
+            return NULL;    //выход
+        }
+    }
+    return map; //если всё норм то возврат карты
+}
+
+
+void free_map(char **map, int x_height_map) {  //функция для очистки карты //принимаем главный адрес карты и x строк
+    if (map == NULL) {
+        return;     //если и так пустая то скип
+    }
+    for (int i = 0; i < x_height_map; i++) {       //цикл по всем строкам
+        free(map[i]);         //память освободилась в i строке
+    }
+    free(map);        //освобождаем массив указателей
+}
+
+
+void random_place(GameMap *g, char sym) {      //функция принимает указатель на структуру-коробку в памяти, а также символ который мы кладём в карту(костёр/пещера)
+    while (1) {         //работает всегда до break
+        int x = rand() % ((*g).x_height_map - 2) + 1; //rand выдаёт (от 0 до высоты карты -2) + 1(x никогда не будет равен 0), а также никогда не коснётся стены
+        int y = rand() % ((*g).y_width_map - 2) + 1; //rand выдаёт (от 0 до высоты карты -2) + 1(y никогда не будет равен 0), а также никогда не коснётся стены
+        if ((*g).net[x][y] == '.') {         //в структуре-коробке открываем (*g).net(чтобы открылось данные, а не ) на x,y, если в сетке на x,y трава, то можно
+            (*g).net[x][y] = sym;            //поставить символ
+            break;      //и закончить функцию
+        }
+    }
+}
+
+
+
+void generate_forest(GameMap *g) {          //генерируем лес
+    (*g).x_height_map = rand() % 26 + 5;       //высота от 0 до 25 и весь диапозон сдвигаем на 5, то есть высота от 5 до 30
+    (*g).y_width_map = rand() % 26 + 5;        //ширина от 0 до 25 и весь диапозон сдвигаем на 5, то есть высота от 5 до 30
+    (*g).net = dedicated_map((*g).x_height_map, (*g).y_width_map);     //вызываем функцию для выделения памяти и кидаем туда x,y координату
+                                                                       //и записываем главный адрес в net, в структуру-коробку, заполняем
+    for (int i = 0; i < (*g).x_height_map; i++) {     //цикл по строкам
+        for (int j = 0; j < (*g).y_width_map; j++) {    //в котором цикл по столбцам
+            if (i == 0 || i == (*g).x_height_map - 1 || j == 0 || j == (*g).y_width_map - 1) {    //если i=0 или i=высота-1 или j=0 или j=ширина-1
+                                                                                                  //то есть край карты, либо вверх, либо низ, либо лево, либо право
+                (*g).net[i][j] = '#';      //забор поставили в этом месте
+            } else {        //если в лесу не на краю карты
+                int r = rand() % 100;       //rand от 0 до 99
+                if (r < 11) (*g).net[i][j] = 'T';         //в случае меньше 11, то дерево
+                else if (r < 21) (*g).net[i][j] = 'R';          //если от 11 до 20, то камень
+                else (*g).net[i][j] = '.';         //иначе трава спавнится
+            }
+        }
+    }
+
+    random_place(g, '^'); //место для костра/лагеря появляется в случайной координате
+    random_place(g, 'O');  //место для пещерки появляется в случайной координате
+
+    do { //делай
+        (*g).hero_xpos = rand() % ((*g).x_height_map - 2) + 1;        //рандом x позиция игрока изначальная чтобы не заспавнился в стенах
+        (*g).hero_ypos = rand() % ((*g).y_width_map - 2) + 1;         //рандом y позиция игрока изначальная чтобы не заспавнился в стенах
+    } while ((*g).net[(*g).hero_xpos][(*g).hero_ypos] != '.');       //проверяем, не в дереве или камне ли персонаж, не в костре или не в входе в пещеру
+
+    (*g).in_cave = 0;       //мы в лесу(обращаемся к коробке)
+    journey_cards++;        //+1 карта
+}
+
+
+void generate_cave(GameMap *g) {                     //генерируем пещеру
+    (*g).x_height_map = rand() % 4 + 5;           //высота от 0 до 3, но смещаем диапазон на 5, в итоге от 5 до 8
+    (*g).y_width_map = rand() % 4 + 5;            //ширина от 0 до 3, но смещаем диапазон на 5, в итоге от 5 до 8
+    (*g).net = dedicated_map((*g).x_height_map, (*g).y_width_map);          //обращаемся к функции с определёнными x,y, вводим в net в коробку в виде значения
+
+    for (int i = 0; i < (*g).x_height_map; i++) {              //цикл по x
+        for (int j = 0; j < (*g).y_width_map; j++) {                  //цикл по y
+            if (i == 0 || i == (*g).x_height_map - 1 || j == 0 || j == (*g).y_width_map - 1) {            //если края то
+                (*g).net[i][j] = '#';                                                                     //стены
+            } else {                        //внутри пещеры
+                int r = rand() % 100;                      //от 0 до 99
+                if (r < 10) (*g).net[i][j] = 'T';                     //если от 0 до 9, то спавн деревьев
+                else if (r < 20) (*g).net[i][j] = 'R';                    //если от 10 до 19 спавнится камни
+                else (*g).net[i][j] = '.';         //в любых других случаях трава
+            }
+        }
+    }
+
+    random_place(g, 'O');  //выход из пещеры спавнится через функцию
+
+    do { //делаем
+        (*g).hero_xpos = rand() % ((*g).x_height_map - 2) + 1;        //рандом x позиция игрока
+        (*g).hero_ypos = rand() % ((*g).y_width_map - 2) + 1;         //рандом y позиция игрока
+    } while ((*g).net[(*g).hero_xpos][(*g).hero_ypos] != '.');       //проверяем, не в дереве или камне
+
+    (*g).in_cave = 1;       //мы в пещере
+    depth++;        //+1 глубина пещеры
+}
+
+
+void draw_map(GameMap *g) {       //вывод карты
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    printf("\n");
+    
+    for (int i = 0; i < (*g).x_height_map; i++) {       //цикл по x
+        for (int j = 0; j < (*g).y_width_map; j++) {      //цикл внутри цикла по y
+            if (i == (*g).hero_xpos && j == (*g).hero_ypos) {         //если это клетка героя по x,y, 
+                                                                      //то рисуем героя поверх карты (координаты героя лежат отдельно)
+                                                                      //в саму карту не вписываем @, карта остаётся той же
+                printf("@ ");                  //рисуем героя 
+            } else { 
+                printf("%c ", (*g).net[i][j]); //иначе рисуем остальное дерево, камни, костёр/лагер  из таблицы net
+            }
+        }
+        printf("\n");
+    }
+
+    if ((*g).in_cave == 0) {
+        printf("Локация: Лес\n");
+    }
+    else {
+        printf("Локация: Пещера\n");
+    }
+    printf("Карт пройдено: %d\n", journey_cards); //карт пройдено
+    printf("Глубина: %d\n", depth);         //глубина
+}
+
+
+int move_hero(GameMap *g, int dx, int dy) {    //создаём функцию которая принимает указатель коробки, направление по x/y
+    int new_x = (*g).hero_xpos + dx;       //топаем по x высоте
+    int new_y = (*g).hero_ypos + dy;       //топаем по y ширине
+
+    if (new_x < 0 || new_x >= (*g).x_height_map || new_y < 0 || new_y >= (*g).y_width_map) {    //если новый x < 0(уходит за высоту вверх) или x>=высоты карты(уходит вниз)
+                                                                                                //или новый y<0(уходит за ширину влево) или y>=ширины карты(уходит за ширину вправо)
+        return 0; //незя за карту, ничего не делаем
+    }
+
+    char target = (*g).net[new_x][new_y];      //создаём символ в котором написано что будет на новом шаге из коробки net
+
+    if (target == '#' || target == 'T' || target == 'R') {       //если забор!? дерево!? камень!?
+        return 0; //нельзя идти, ничего не делаем
+    }
+
+    (*g).hero_xpos = new_x;     //смена координат x героя
+    (*g).hero_ypos = new_y;     //смена координат y героя
+
+    if (target == 'O') {         //если вход есть
+        return 2;          //возвращаем 2 если есть
+    }
+
+    return 1; //обычный шаг по карте
+}
+
+
+void adventure() { //функция, отвечающая за приключение
+    GameMap world;              //создаём пустую коробку мира
+    generate_forest(&world);        //создаём лес внутри коробки
+
+    int running = 1;            //создаём число - флаг работы цикла
+    char walk;                   //создаём символ движения
+
+    while (running == 1) { //пока в цикле мира
+        draw_map(&world);               //отображаем карту с помощью функции
+        printf("Действие (W/A/S/D, Q - выход,R = побег): "); //пишем управление как ходить
+        
+        if (scanf(" %c", &walk) != 1) {                 //читаем букву(убираем все пробелы в scanf из буфера памяти) 
+            while (getchar() != '\n');                  //если не то ввели
+            continue; //скип
+        }
+
+        int dx = 0, dy = 0;              //координаты, пока равны 0
+        if (walk == 'w' || walk == 'W') dx = -1;                 //вверх(-1, так как чтобы пойти вверх нужно считать строку минус один)
+        else if (walk == 's' || walk == 'S') dx = 1;                  //вниз
+        else if (walk == 'a' || walk == 'A') dy = -1;                     //влево
+        else if (walk == 'd' || walk == 'D') dy = 1;                      //вправо
+        else if (walk == 'q' || walk == 'Q') {                            //домой, Уолтер
+            if (world.in_cave == 0 && world.net[world.hero_xpos][world.hero_ypos] == '^') {              //если в лесу и на костре и на x,y игроках координатах стоит костёр
+                printf("Выход из приключения.\n");
+                 printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+                running = 0;            //выходим из while
+            } else if (world.in_cave == 1) {                //иначе если в пещере
+                printf("В пещере нельзя выйти из приключения, ищите выход!\n");
+                my_pause();
+            } else {                    //в лесу, но не костёр
+                printf("Домой можно только с костром!\n");
+                my_pause();
+            }
+            continue;
+        }
+        else if (walk == 'r' || walk == 'R') {                            //побег если багованая карта, но с потерей ресурсов
+            printf("Убежал от проблем... но потерял что-то одно по дороге...\n");
+            int random_slot_lost = rand() % 10; //случайный слот от 0 до 9
+            if (inventory[random_slot_lost] >0) {
+                inventory[random_slot_lost] -= 1; //потерял рандомный предмет в кол-во 1 штука
+                if (inventory[random_slot_lost] == 0) {
+                    inventory_id[random_slot_lost] = 0;
+                }
+            }
+            my_pause();
+            running = 0; //выходим из while
+            continue;
+        }
+        else {
+            printf("Не знаю такой команды.\n");
+            continue; //продолжаем и ждём других движений
+        }
+
+        int result = move_hero(&world, dx, dy); //создаём результат, функцию куда идёт персонаж
+        if (result == 0) {
+            printf("Нет возможности идти: препятствие.\n");
+        } else if (result == 2) {                        //наступили на О(пещеру)
+            if (world.in_cave == 0) {              //если были в лесу
+                free_map(world.net, world.x_height_map);          //память освобождаем, удаляем карту
+                generate_cave(&world);                         //а уже затем генерируем пещеру в структуре-коробке
+                printf("Вы спустились в пещеру... Глубина: %d\n", depth);
+                my_pause();
+            } else {                                               //если были в пещере и наступили на o(пещеру)
+                free_map(world.net, world.x_height_map);           //память освобождаем, удаляем карту
+                generate_forest(&world);                               //генерируем новую карту леса
+                depth = 0;                                        //глубина 0 теперь
+                printf("Вы выбрались в новый лес.\n");
+                my_pause();
+            }
+        }
+    }
+
+    free_map(world.net, world.x_height_map);                                            //освобождаем память от последней карты
+    printf("Память карты очищена. Возврат в меню.\n");
+}
+
+
+
+int main() {                 
+    srand(time(NULL));             //рандом зависит от времени, чтобы не было повторений последовательности
     SetConsoleCP(65001); //русский язык
     SetConsoleOutputCP(65001); //русский язык
     load__item_names(); //загрузка название предметов
@@ -538,12 +613,12 @@ int main() {                                                                    
         if (scanf("%d", &pick) != 1) {
             scanf("%*s");
             printf("Неверное значение\n");
-            pause();
+            my_pause();
             continue;
         } //защита от дурака
         if (pick >10 || pick <0) {
             printf("Неверный пункт, введите заново\n");
-            pause();
+            my_pause();
             continue;
         } //2 защита от дурака
 
@@ -555,7 +630,7 @@ int main() {                                                                    
 
             case 1: //время
                 show_time();
-                pause();
+                my_pause();
                 break;
 
             case 2: //работа по часам
@@ -564,21 +639,21 @@ int main() {                                                                    
 
             case 3: //просмотр инвентаря
                 show_inventory();
-                pause();
+                my_pause();
                 break;
 
             case 4: //кладём предмет в слот
                 put_item();
-                pause();
+                my_pause();
                 break;
 
             case 5: //выбросить предмет
                 drop_item();
-                pause();
+                my_pause();
                 break;
             case 6: //очистка мусора
                 clear_trash();
-                pause();
+                my_pause();
                 break;
             case 7: //поиск предмета по имени
                 getchar();
@@ -591,7 +666,7 @@ int main() {                                                                    
                 break;
             case 9: //доска объявлений
                 bulletin_board();
-                pause();
+                my_pause();
                 break;
             case 10: //отправиться в приключение 
                 adventure();
