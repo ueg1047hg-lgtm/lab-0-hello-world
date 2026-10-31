@@ -540,7 +540,8 @@ void adventure() { //функция, отвечающая за приключе�
         else if (walk == 'q' || walk == 'Q') {                            //домой, Уолтер
             if (world.in_cave == 0 && world.net[world.hero_xpos][world.hero_ypos] == '^') {              //если в лесу и на костре и на x,y игроках координатах стоит костёр
                 printf("Выход из приключения.\n");
-                 printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+                my_pause();
+                printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
                 running = 0;            //выходим из while
             } else if (world.in_cave == 1) {                //иначе если в пещере
                 printf("В пещере нельзя выйти из приключения, ищите выход!\n");
